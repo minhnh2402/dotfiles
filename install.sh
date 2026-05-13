@@ -292,6 +292,7 @@ mod_stow() {
     local STOW_PKGS=(zsh nvim wezterm git tmux ssh scripts)
     local BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d_%H%M%S)"
     local has_conflict=0
+    local rel_path target real_path expected pkg src_file
 
     cd "$DOTFILES_DIR"
 
@@ -302,29 +303,44 @@ mod_stow() {
 
         step "Linking $pkg..."
 
+        # Unstow first to clean up existing links from this package
+        stow -D -t "$HOME" "$pkg" 2>/dev/null || true
+
         # Find files that stow would create and check for conflicts
         while IFS= read -r -d '' src_file; do
-            # Get relative path from pkg dir
-            local rel_path="${src_file#$DOTFILES_DIR/$pkg/}"
-            local target="$HOME/$rel_path"
+            rel_path="${src_file#$DOTFILES_DIR/$pkg/}"
+            target="$HOME/$rel_path"
+            expected="$DOTFILES_DIR/$pkg/$rel_path"
 
-            # If target exists and is NOT a symlink → conflict, backup it
-            if [ -e "$target" ] && [ ! -L "$target" ]; then
-                mkdir -p "$BACKUP_DIR/$(dirname "$rel_path")"
-                mv "$target" "$BACKUP_DIR/$rel_path"
-                warn "Backed up $target → $BACKUP_DIR/$rel_path"
-                has_conflict=1
+            # Skip if target doesn't exist
+            if [ ! -e "$target" ] && [ ! -L "$target" ]; then
+                continue
             fi
 
-            # If target is a symlink pointing elsewhere → remove it
+            # If target resolves to our dotfiles repo → already managed, skip
+            real_path="$(readlink -f "$target" 2>/dev/null || echo "")"
+            if [ "$real_path" = "$expected" ]; then
+                continue
+            fi
+
+            # If target is a broken symlink → remove
+            if [ -L "$target" ] && [ ! -e "$target" ]; then
+                rm "$target"
+                continue
+            fi
+
+            # If target is a symlink pointing elsewhere → remove
             if [ -L "$target" ]; then
-                local link_target
-                link_target="$(readlink -f "$target")"
-                local expected="$DOTFILES_DIR/$pkg/$rel_path"
-                if [ "$link_target" != "$expected" ]; then
-                    rm "$target"
-                fi
+                rm "$target"
+                continue
             fi
+
+            # Target is a real file not from our repo → backup
+            mkdir -p "$BACKUP_DIR/$(dirname "$rel_path")"
+            mv "$target" "$BACKUP_DIR/$rel_path"
+            warn "Backed up $target → $BACKUP_DIR/$rel_path"
+            has_conflict=1
+
         done < <(find "$DOTFILES_DIR/$pkg" -type f -print0)
 
         # Now stow should work cleanly
