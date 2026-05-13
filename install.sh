@@ -109,12 +109,41 @@ mod_wezterm() {
         echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' \
             | sudo tee /etc/apt/sources.list.d/wezterm.list
         sudo apt update && sudo apt install -y wezterm
-
-        sudo update-alternatives --install \
-            /usr/bin/x-terminal-emulator x-terminal-emulator /usr/bin/wezterm 50
-        sudo update-alternatives --set x-terminal-emulator /usr/bin/wezterm
     else
         warn "WezTerm already installed."
+    fi
+
+    # Set as default terminal (always run, even if already installed)
+    if command -v wezterm &>/dev/null; then
+        # x-terminal-emulator (works for some DEs and scripts)
+        sudo update-alternatives --install \
+            /usr/bin/x-terminal-emulator x-terminal-emulator "$(which wezterm)" 50 2>/dev/null || true
+        sudo update-alternatives --set x-terminal-emulator "$(which wezterm)" 2>/dev/null || true
+
+        # GNOME default terminal (Ctrl+Alt+T on Ubuntu 26.04 Wayland)
+        if command -v gsettings &>/dev/null; then
+            # Create .desktop file if not exists
+            local DESKTOP_FILE="/usr/share/applications/wezterm.desktop"
+            if [ ! -f "$DESKTOP_FILE" ]; then
+                sudo tee "$DESKTOP_FILE" > /dev/null << 'EOF'
+[Desktop Entry]
+Name=WezTerm
+Comment=Wez's Terminal Emulator
+Exec=wezterm
+Icon=org.wezfurlong.wezterm
+Type=Application
+Categories=System;TerminalEmulator;
+Keywords=terminal;shell;prompt;
+StartupNotify=true
+EOF
+            fi
+
+            # Set as GNOME preferred terminal
+            gsettings set org.gnome.desktop.default-applications.terminal exec wezterm 2>/dev/null || true
+            gsettings set org.gnome.desktop.default-applications.terminal exec-arg '' 2>/dev/null || true
+        fi
+
+        step "WezTerm set as default terminal."
     fi
 }
 
@@ -261,16 +290,55 @@ mod_stow() {
     step "[stow] Link dotfiles"
 
     local STOW_PKGS=(zsh nvim wezterm git tmux ssh scripts)
+    local BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d_%H%M%S)"
+    local has_conflict=0
 
     cd "$DOTFILES_DIR"
+
     for pkg in "${STOW_PKGS[@]}"; do
-        if [ -d "$DOTFILES_DIR/$pkg" ]; then
-            step "Linking $pkg..."
-            stow --adopt -t "$HOME" "$pkg" 2>/dev/null || \
-            stow -t "$HOME" "$pkg"
+        if [ ! -d "$DOTFILES_DIR/$pkg" ]; then
+            continue
         fi
+
+        step "Linking $pkg..."
+
+        # Find files that stow would create and check for conflicts
+        while IFS= read -r -d '' src_file; do
+            # Get relative path from pkg dir
+            local rel_path="${src_file#$DOTFILES_DIR/$pkg/}"
+            local target="$HOME/$rel_path"
+
+            # If target exists and is NOT a symlink → conflict, backup it
+            if [ -e "$target" ] && [ ! -L "$target" ]; then
+                mkdir -p "$BACKUP_DIR/$(dirname "$rel_path")"
+                mv "$target" "$BACKUP_DIR/$rel_path"
+                warn "Backed up $target → $BACKUP_DIR/$rel_path"
+                has_conflict=1
+            fi
+
+            # If target is a symlink pointing elsewhere → remove it
+            if [ -L "$target" ]; then
+                local link_target
+                link_target="$(readlink -f "$target")"
+                local expected="$DOTFILES_DIR/$pkg/$rel_path"
+                if [ "$link_target" != "$expected" ]; then
+                    rm "$target"
+                fi
+            fi
+        done < <(find "$DOTFILES_DIR/$pkg" -type f -print0)
+
+        # Now stow should work cleanly
+        stow -t "$HOME" "$pkg"
     done
+
     cd "$HOME"
+
+    if [ "$has_conflict" -eq 1 ]; then
+        warn "Conflicting files backed up to: $BACKUP_DIR"
+        warn "Review and delete backup when satisfied."
+    fi
+
+    step "Dotfiles linked."
 }
 
 mod_cleanup() {
