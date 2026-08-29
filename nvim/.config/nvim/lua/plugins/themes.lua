@@ -1,45 +1,40 @@
+-- Themes to cycle through with <leader>ct
+local themes = {
+  "tokyonight",
+  "accent",           -- the one that's easy on my eyes
+  "catppuccin-mocha", -- default (index 3)
+  "rose-pine",
+  "kanagawa",
+  "gruvbox",
+  "everforest",
+}
+local current = 3     -- startup theme = catppuccin-mocha
+ 
 return {
-    {
-        "folke/tokyonight.nvim",
-        name = "tokyonight",
-        priority = 999,
-        config = function()
-            -- Set default theme
-            local themes = {
-                "tokyonight", -- for recording
-                "accent", -- this guy is for my eyes
-                "catppuccin", -- for recording
-                "rose-pine", -- for fun
-            }
-            local current_theme_index = 3
-            -- Set default theme (first theme)
-            vim.cmd.colorscheme(themes[current_theme_index])
-
-            -- Key mapping to switch themes (e.g., <leader>nt)
-            vim.keymap.set("n", "<leader>ct", function()
-                current_theme_index = current_theme_index + 1
-                if current_theme_index > #themes then
-                    current_theme_index = 1
-                end
-                local theme = themes[current_theme_index]
-                vim.cmd.colorscheme(theme)
-                print("Changed nvim theme to: " .. theme)
-            end, { noremap = true, silent = true })
-        end,
+  {
+    "catppuccin/nvim",
+    name = "catppuccin",
+    lazy = false,       -- load at startup, not on demand
+    priority = 1000,    -- colorschemes should load before other UI plugins
+    -- Force ALL other themes to finish loading before the config below runs:
+    dependencies = {
+      "folke/tokyonight.nvim",
+      { "rose-pine/neovim", name = "rose-pine" },
+      "rebelot/kanagawa.nvim",
+      "ellisonleao/gruvbox.nvim",
+      "sainnhe/everforest",
+      "alligator/accent.vim",
     },
-    {
-        "catppuccin/nvim",
-        name = "catppuccin",
-        priority = 800,
-    },
-    {
-        "rose-pine/neovim",
-        name = "rose-pine",
-        priority = 1000,
-    },
-    {
-        "alligator/accent.vim",
-        name = "accent",
-        priority = 1100,
-    },
+    config = function()
+      -- Set the default theme
+      vim.cmd.colorscheme(themes[current])
+ 
+      -- <leader>ct: jump to the next theme, wrapping back to the first
+      vim.keymap.set("n", "<leader>ct", function()
+        current = current % #themes + 1   -- compact wrap-around instead of an if block
+        vim.cmd.colorscheme(themes[current])
+        vim.notify("Theme: " .. themes[current])
+      end, { desc = "Cycle colorscheme" })
+    end,
+  },
 }
