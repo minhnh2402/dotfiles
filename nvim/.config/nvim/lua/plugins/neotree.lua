@@ -12,7 +12,7 @@ return {
     },
     
     config = function()
-        vim.keymap.set("n", "<leader>o", "<cmd>Neotree focus<cr>", { desc = "Vào Neo-tree" })
+        vim.keymap.set("n", "<leader>o", "<cmd>Neotree focus<cr>", { desc = "Enter file explorer" })
         require("neo-tree").setup({
             close_if_last_window = true,
             window = {
