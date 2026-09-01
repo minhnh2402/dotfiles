@@ -2,13 +2,13 @@
 local themes = {
   "tokyonight",
   "accent",           -- the one that's easy on my eyes
-  "catppuccin-mocha", -- default (index 3)
+  "catppuccin-mocha",
   "rose-pine",
-  "kanagawa",
+  "kanagawa",         -- Default index 5
   "gruvbox",
   "everforest",
 }
-local current = 3     -- startup theme = catppuccin-mocha
+local current = 5     -- startup theme = kanagawa
  
 return {
   {

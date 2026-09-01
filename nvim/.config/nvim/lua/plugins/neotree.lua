@@ -12,8 +12,9 @@ return {
     },
     
     config = function()
+        vim.keymap.set("n", "<leader>o", "<cmd>Neotree focus<cr>", { desc = "Vào Neo-tree" })
         require("neo-tree").setup({
-            close_if_last_window = true,  -- tự đóng nvim nếu neo-tree là cửa sổ cuối cùng
+            close_if_last_window = true,
             window = {
                 width = 32,
             },
