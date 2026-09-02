@@ -12,6 +12,12 @@ vim.cmd("set cursorline")
 vim.api.nvim_set_hl(0, "LineNrAbove", { fg = "white" })
 vim.api.nvim_set_hl(0, "LineNrBelow", { fg = "#ead84e" })
 vim.opt.termguicolors = true
+vim.api.nvim_create_autocmd("ColorScheme", {
+  callback = function()
+    vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
+    vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
+  end,
+})
 
 -- To copy from vim to clipboard
 vim.api.nvim_set_option("clipboard", "unnamed")
