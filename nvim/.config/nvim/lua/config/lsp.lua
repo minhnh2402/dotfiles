@@ -2,7 +2,8 @@
 -- completion capabilities that blink.cmp provides (snippets, extra
 -- completion item fields, etc.). Must run BEFORE vim.lsp.enable().
 -- Safe version: won't error if blink hasn't loaded yet
-local ok, blink = pcall(require, "blink.cmp")vim.lsp.config("*", {  capabilities = ok and blink.get_lsp_capabilities() or {},})
+local ok, blink = pcall(require, "blink.cmp")
+vim.lsp.config("*", {  capabilities = ok and blink.get_lsp_capabilities() or {},})
  
 -- Turn on the servers (definitions live in ~/.config/nvim/lsp/*.lua)
 vim.lsp.enable({ "clangd"})

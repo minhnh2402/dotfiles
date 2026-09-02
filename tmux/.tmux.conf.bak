@@ -1,0 +1,69 @@
+# ============ Bindings kiểu Oh my tmux! ============
+
+set -g default-terminal "tmux-256color"
+set -ag terminal-overrides ",xterm-256color:RGB"   # true color
+set -sg escape-time 10                              # đổi mode nvim không lag
+set -g focus-events on                              # autoread, restore cursor
+set -g history-limit 10000                          # scrollback (giảm để tiết kiệm RAM)
+
+# Reload config nhanh
+set -g prefix C-a
+unbind C-b
+bind C-a send-prefix
+set -g base-index 1
+setw -g pane-base-index 3
+bind r source-file ~/.tmux.conf \; display-message "config reloaded"
+ 
+# --- Session ---
+bind C-c new-session
+bind C-f command-prompt -p "switch to session:" "switch-client -t '%%'"
+ 
+# --- Window ---
+bind -r C-h previous-window        # prefix Ctrl-h: window trước
+bind -r C-l next-window            # prefix Ctrl-l: window sau
+bind Tab last-window               # về window vừa dùng
+unbind n
+unbind p
+ 
+# --- Split (giữ nguyên thư mục hiện tại) ---
+bind - split-window -v -c '#{pane_current_path}'   # chia trên/dưới
+bind _ split-window -h -c '#{pane_current_path}'   # chia trái/phải
+ 
+# --- Resize pane (giữ prefix, bấm lặp được) ---
+bind -r H resize-pane -L 2
+bind -r J resize-pane -D 2
+bind -r K resize-pane -U 2
+bind -r L resize-pane -R 2
+ 
+# --- Swap pane ---
+bind < swap-pane -U
+bind > swap-pane -D
+ 
+# --- Zoom pane (thay cho "maximize" của gpakosz) ---
+bind + resize-pane -Z
+ 
+# --- Toggle mouse mode, có báo trạng thái ---
+bind m set -g mouse \; display-message "mouse: #{?mouse,on,off}"
+ 
+# --- Copy / paste ---
+bind Enter copy-mode
+bind b list-buffers
+bind p paste-buffer
+bind P choose-buffer
+ 
+# --- copy-mode-vi giống Vim ---
+setw -g mode-keys vi
+bind -T copy-mode-vi v   send -X begin-selection
+bind -T copy-mode-vi C-v send -X rectangle-toggle
+bind -T copy-mode-vi H   send -X start-of-line
+bind -T copy-mode-vi L   send -X end-of-line
+bind -T copy-mode-vi y   send -X copy-selection-and-cancel
+bind -T copy-mode-vi Escape send -X cancel
+
+# ---------- Điều hướng nvim <-> tmux (vim-tmux-navigator) ----------
+is_vim="ps -o state= -o comm= -t '#{pane_tty}' \
+    | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|l?n?vim?x?|fzf)(diff)?$'"
+bind-key -n 'C-h' if-shell "$is_vim" 'send-keys C-h'  'select-pane -L'
+bind-key -n 'C-j' if-shell "$is_vim" 'send-keys C-j'  'select-pane -D'
+bind-key -n 'C-k' if-shell "$is_vim" 'send-keys C-k'  'select-pane -U'
+bind-key -n 'C-l' if-shell "$is_vim" 'send-keys C-l'  'select-pane -R'
