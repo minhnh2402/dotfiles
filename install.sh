@@ -216,6 +216,8 @@ mod_tmux() {
     step "[tmux] Install tmux"
  
     sudo apt install -y tmux
+
+    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 }
  
 mod_tailscale() {
