@@ -92,6 +92,10 @@ mod_zsh() {
     [ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ] && \
         git clone https://github.com/zsh-users/zsh-syntax-highlighting \
         "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+    
+    [ ! -d "$ZSH_CUSTOM/plugins/zsh-completions" ] && \
+        git clone https://github.com/zsh-users/zsh-completions \
+        "$ZSH_CUSTOM/plugins/zsh-completions"
  
     [ ! -d "$ZSH_CUSTOM/themes/powerlevel10k" ] && \
         git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
