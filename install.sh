@@ -133,11 +133,23 @@ mod_neovim() {
 mod_nvimtools() {
     step "[nvimtools] Neovim CLI deps that apt ships too old (fzf, tree-sitter)"
  
+    # ---- Where to place the wrapper binaries / symlinks -------------------
+    #   /usr/local/bin   → on PATH everywhere, but writing needs sudo.
+    #   $HOME/.local/bin → no sudo, BUT it must already be on your PATH.
+    #                      zsh does NOT read ~/.profile, so confirm your
+    #                      stow-managed .zshrc adds ~/.local/bin before
+    #                      switching, or the tools won't be found.
+    # SUDO is emptied automatically when BIN_DIR is already writable, so
+    # switching to ~/.local/bin drops the sudo requirement of this module.
+    local BIN_DIR="/usr/local/bin"
+    local SUDO="sudo"
+    [ -w "$BIN_DIR" ] && SUDO=""
+    mkdir -p "$BIN_DIR" 2>/dev/null || $SUDO mkdir -p "$BIN_DIR"
+ 
     # fd / bat: Ubuntu installs them as `fdfind` / `batcat`.
     # fzf-lua and most Neovim configs expect the canonical names on PATH.
-    # Symlink into /usr/local/bin (no .zshrc edits; stow owns .zshrc).
-    command -v fdfind &>/dev/null && sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
-    command -v batcat &>/dev/null && sudo ln -sf "$(command -v batcat)" /usr/local/bin/bat
+    command -v fdfind &>/dev/null && $SUDO ln -sf "$(command -v fdfind)" "$BIN_DIR/fd"
+    command -v batcat &>/dev/null && $SUDO ln -sf "$(command -v batcat)" "$BIN_DIR/bat"
  
     # fzf: apt = 0.29, but fzf-lua needs > 0.36. Install from git (official).
     # `--bin` downloads only the binary and does NOT modify any shell rc file.
@@ -148,15 +160,39 @@ mod_nvimtools() {
     fi
     "$HOME/.fzf/install" --bin
     # Symlink so it shadows any old apt fzf still present.
-    sudo ln -sf "$HOME/.fzf/bin/fzf" /usr/local/bin/fzf
+    $SUDO ln -sf "$HOME/.fzf/bin/fzf" "$BIN_DIR/fzf"
  
-    # tree-sitter CLI: nvim-treesitter compiles parsers with it.
-    # Use the prebuilt binary to skip the cargo path entirely (apt rustc 1.75
-    # is too old for tree-sitter-cli, and bindgen would need libclang).
+    # tree-sitter CLI: nvim-treesitter (main branch) compiles parsers with it.
+    #
+    # The official prebuilt linux-x64 binary is built against a NEW glibc:
+    # since v0.25.0 it requires GLIBC_2.39 (Ubuntu 24.04+). On an older glibc
+    # (e.g. 22.04 = 2.35) it dies at runtime with
+    #     version `GLIBC_2.39' not found
+    # so we can't just grab "latest" everywhere. Strategy:
+    #   glibc >= 2.39 → download the official prebuilt binary (fast).
+    #   glibc <  2.39 → build from source via cargo, which links against the
+    #                   system glibc and therefore always runs. libclang-dev
+    #                   comes from mod_core; apt rustc is too old so use rustup.
     if ! command -v tree-sitter &>/dev/null; then
-        curl -fL "https://github.com/tree-sitter/tree-sitter/releases/latest/download/tree-sitter-linux-x64.gz" \
-            | gzip -dc | sudo tee /usr/local/bin/tree-sitter >/dev/null
-        sudo chmod +x /usr/local/bin/tree-sitter
+        local glibc_ver min_ver
+        glibc_ver="$(ldd --version | head -1 | grep -oE '[0-9]+\.[0-9]+$')"
+        min_ver="$(printf '%s\n2.39\n' "$glibc_ver" | sort -V | head -1)"
+ 
+        if [ "$min_ver" = "2.39" ]; then
+            step "glibc ${glibc_ver} ≥ 2.39 → official prebuilt tree-sitter binary"
+            curl -fL "https://github.com/tree-sitter/tree-sitter/releases/latest/download/tree-sitter-linux-x64.gz" \
+                | gzip -dc | $SUDO tee "$BIN_DIR/tree-sitter" >/dev/null
+            $SUDO chmod +x "$BIN_DIR/tree-sitter"
+        else
+            step "glibc ${glibc_ver:-unknown} < 2.39 → building tree-sitter-cli from source (cargo)"
+            if ! command -v cargo &>/dev/null; then
+                curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            fi
+            # shellcheck disable=SC1091
+            source "$HOME/.cargo/env"
+            cargo install tree-sitter-cli
+            $SUDO ln -sf "$HOME/.cargo/bin/tree-sitter" "$BIN_DIR/tree-sitter"
+        fi
     else
         warn "tree-sitter already installed: $(tree-sitter --version)"
     fi
