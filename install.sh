@@ -173,12 +173,22 @@ mod_nvimtools() {
     #   glibc <  2.39 → build from source via cargo, which links against the
     #                   system glibc and therefore always runs. libclang-dev
     #                   comes from mod_core; apt rustc is too old so use rustup.
-    if ! command -v tree-sitter &>/dev/null; then
-        local glibc_ver min_ver
-        glibc_ver="$(ldd --version | head -1 | grep -oE '[0-9]+\.[0-9]+$')"
-        min_ver="$(printf '%s\n2.39\n' "$glibc_ver" | sort -V | head -1)"
- 
-        if [ "$min_ver" = "2.39" ]; then
+    # Test that tree-sitter actually RUNS, not just that the file exists.
+    # A previous run may have left a prebuilt binary that dies with
+    # "GLIBC_2.39 not found"; `command -v` would call that "installed",
+    # so we probe `--version` and wipe any stale copy we manage.
+    if ! tree-sitter --version &>/dev/null; then
+        [ -e "$BIN_DIR/tree-sitter" ] && $SUDO rm -f "$BIN_DIR/tree-sitter"
+        # Read glibc version WITHOUT `| head` — head closes the pipe early,
+        # the left stage can get SIGPIPE, and under `set -o pipefail` that
+        # aborts the whole script silently. awk's END block and `tail -1`
+        # both consume the entire stream, so no stage is killed early.
+        local glibc_ver
+        glibc_ver="$(ldd --version 2>/dev/null | awk 'NR==1{v=$NF} END{print v}')"
+
+        # glibc >= 2.39 ? (needed by the official prebuilt binary, v0.25.0+)
+        if [ -n "$glibc_ver" ] && \
+           [ "$(printf '2.39\n%s\n' "$glibc_ver" | sort -V | tail -1)" = "$glibc_ver" ]; then
             step "glibc ${glibc_ver} ≥ 2.39 → official prebuilt tree-sitter binary"
             curl -fL "https://github.com/tree-sitter/tree-sitter/releases/latest/download/tree-sitter-linux-x64.gz" \
                 | gzip -dc | $SUDO tee "$BIN_DIR/tree-sitter" >/dev/null
