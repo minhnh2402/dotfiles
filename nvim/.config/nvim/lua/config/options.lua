@@ -54,4 +54,11 @@ end
 -- Remove swap file
 vim.opt.swapfile = false
 
+-- Reload files changed outside of Neovim automatically
+vim.opt.autoread = true
 
+-- autoread only re-checks on certain events; nudge it on focus/buffer enter
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
+  pattern = "*",
+  command = "checktime", -- check if the file changed on disk and reload if so
+})
