@@ -37,5 +37,21 @@ return {
         vim.keymap.set("n", "<leader>fs", function()
             fzf.grep({ search = vim.fn.input("Grep For > ") })
         end, { desc = "FZF grep with input" })
+
+        -- Find file in your directory
+        vim.keymap.set("n", "<leader>fd", function()
+            local dir = vim.fn.input("Dir > ", "", "dir")
+            if dir ~= "" then
+                fzf.files({ cwd = dir, prompt = "Files (" .. dir .. ")> " })
+            end
+        end, { desc = "Find files in a chosen directory" })
+
+        -- Live grep in your directory
+        vim.keymap.set("n", "<leader>fD", function()
+            local dir = vim.fn.input("Dir > ", "", "dir")
+            if dir ~= "" then
+                fzf.live_grep({ cwd = dir, prompt = "Grep (" .. dir .. ")> " })
+            end
+        end, { desc = "Live grep in a chosen directory" })
     end,
 }
