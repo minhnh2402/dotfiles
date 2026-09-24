@@ -36,6 +36,7 @@ return {
     "--completion-style=detailed",
     "--function-arg-placeholders",
     "--fallback-style=llvm",      -- style used when no .clang-format file is found
+    "--query-driver=" .. vim.env.HOME .. "/tools/arm-gnu-toolchain-*/bin/arm-none-eabi-*",
   },
   filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
   -- .clangd comes first so that nested repos with their own .git

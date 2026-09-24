@@ -9,7 +9,9 @@ function M.buf_dir()
   return name ~= "" and vim.fn.fnamemodify(name, ":p:h") or vim.uv.cwd()
 end
 
--- Pick a directory with fzf-lua, then call `on_pick(dir)`.
+-- Pick one or more directories with fzf-lua, then call `on_pick(dirs)`
+-- with a list of paths relative to cwd.
+-- Select several with <Tab> (or <C-q> for all), confirm with <Enter>.
 -- Uses fd (or fdfind on Ubuntu) when available, falls back to find.
 function M.pick_dir(prompt, on_pick)
   local cmd
@@ -24,14 +26,21 @@ function M.pick_dir(prompt, on_pick)
     prompt = prompt,
     cwd = vim.uv.cwd(),
     preview = "ls -p --color=always {}",
+    fzf_opts = { ["--multi"] = true },
     actions = {
       ["default"] = function(selected)
-        if selected and selected[1] then
-          vim.schedule(function() on_pick(selected[1]) end)
+        if selected and #selected > 0 then
+          vim.schedule(function() on_pick(selected) end)
         end
       end,
     },
   })
+end
+
+-- Short label for a list of directories, used in picker prompts.
+function M.label(dirs)
+  if #dirs == 1 then return dirs[1] end
+  return dirs[1] .. " +" .. (#dirs - 1)
 end
 
 return M

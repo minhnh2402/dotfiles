@@ -64,15 +64,16 @@ return {
       end,
       desc = "Search & replace (current file's dir)",
     },
-    -- Pick any directory with fzf first
+    -- Pick one or more directories with fzf first (<Tab> to multi-select)
     {
       "<leader>sD",
       function()
-        require("utils.pick").pick_dir("Dir for replace> ", function(dir)
-          require("grug-far").open({ prefills = { paths = escape_path(dir) } })
+        require("utils.pick").pick_dir("Dirs for replace> ", function(dirs)
+          local paths = vim.tbl_map(escape_path, dirs)
+          require("grug-far").open({ prefills = { paths = table.concat(paths, " ") } })
         end)
       end,
-      desc = "Search & replace (pick a directory)",
+      desc = "Search & replace (pick directories)",
     },
     -- C/C++ sources and headers only, word under cursor
     {
