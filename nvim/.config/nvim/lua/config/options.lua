@@ -44,6 +44,9 @@ vim.opt.swapfile = false
 -- Reload files changed outside of Neovim automatically
 vim.opt.autoread = true
 
+-- Faster CursorHold (used by LSP symbol highlighting)
+vim.opt.updatetime = 250
+
 -- autoread only re-checks on certain events; nudge it on focus/buffer enter
 vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
   pattern = "*",

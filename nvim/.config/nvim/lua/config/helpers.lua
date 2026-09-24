@@ -10,8 +10,8 @@ vim.keymap.set("n", "<leader>cpe", function()
 end, { noremap = true, silent = true })
 
 -- diagnostics
-vim.keymap.set("n", "<leader>ne", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
-vim.keymap.set("n", "<leader>pe", vim.diagnostic.goto_prev, { desc = "Prev diagnostic" })
+vim.keymap.set("n", "<leader>ne", function() vim.diagnostic.jump({ count = 1, float = true }) end, { desc = "Next diagnostic" })
+vim.keymap.set("n", "<leader>pe", function() vim.diagnostic.jump({ count = -1, float = true }) end, { desc = "Prev diagnostic" })
 vim.keymap.set("n", "<leader>ce",  vim.diagnostic.open_float, { desc = "Show diagnostic" })
 
 -- copy absolute file path

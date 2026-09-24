@@ -29,7 +29,8 @@ return {
     spec = {
       { "<leader>f", group = "file/find" },
       { "<leader>g", group = "git" },
-      { "<leader>s", group = "search" },
+      { "<leader>s", group = "search/replace" },
+      { "<leader>l", group = "lsp" },
       { "<leader>b", group = "buffer" },
       { "<C-w>",     group = "window/split" },  -- hint for Ctrl-w
     },

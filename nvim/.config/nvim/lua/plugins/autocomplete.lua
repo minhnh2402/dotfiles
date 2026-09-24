@@ -45,6 +45,9 @@ return {
       preset = "luasnip",
     },
 
+    -- Show the function signature while typing arguments
+    signature = { enabled = true },
+
     -- Use the fast Rust fuzzy matcher; warn (don't crash) if unavailable
     fuzzy = { implementation = "prefer_rust_with_warning" },
   },
