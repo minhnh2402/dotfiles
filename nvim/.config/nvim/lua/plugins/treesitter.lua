@@ -9,6 +9,7 @@ return {
     require("nvim-treesitter").install({
       "c", "cpp", "go", "rust", "lua",
       "vim", "vimdoc", "query", "markdown", "markdown_inline",
+      "html", -- leetcode.nvim renders problem descriptions with it
     })
  
     -- Highlighting is NOT auto-enabled on main branch: start it ourselves.
