@@ -42,5 +42,39 @@ function M.label(dirs)
   if #dirs == 1 then return dirs[1] end
   return dirs[1] .. " +" .. (#dirs - 1)
 end
+-- Git root of the current buffer's directory (nil if not in a repo).
+function M.git_root()
+  local out = vim.fn.systemlist({ "git", "-C", M.buf_dir(), "rev-parse", "--show-toplevel" })
+  if vim.v.shell_error ~= 0 or not out[1] or out[1] == "" then return nil end
+  return out[1]
+end
+
+-- Current buffer path relative to the git root.
+-- dir_only = true returns the directory instead of the file.
+-- Falls back to a cwd-relative path outside a repo.
+function M.rel_path(dir_only)
+  local name = vim.api.nvim_buf_get_name(0)
+  local abs = name ~= "" and vim.fn.fnamemodify(name, ":p") or vim.uv.cwd()
+  if dir_only and name ~= "" then abs = vim.fn.fnamemodify(abs, ":h") end
+  -- Resolve symlinks so /data1/home/... matches what git reports.
+  abs = vim.uv.fs_realpath(abs) or abs
+
+  local root = M.git_root()
+  if root then
+    root = vim.uv.fs_realpath(root) or root
+    if abs == root then return "." end
+    if abs:sub(1, #root + 1) == root .. "/" then
+      return abs:sub(#root + 2)
+    end
+  end
+  return vim.fn.fnamemodify(abs, ":.")
+end
+
+-- Copy text to the system clipboard and the unnamed register.
+function M.copy(text)
+  vim.fn.setreg("+", text)
+  vim.fn.setreg('"', text)
+  vim.notify("Copied: " .. text)
+end
 
 return M

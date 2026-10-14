@@ -14,10 +14,12 @@ vim.keymap.set("n", "<leader>ne", function() vim.diagnostic.jump({ count = 1, fl
 vim.keymap.set("n", "<leader>pe", function() vim.diagnostic.jump({ count = -1, float = true }) end, { desc = "Prev diagnostic" })
 vim.keymap.set("n", "<leader>ce",  vim.diagnostic.open_float, { desc = "Show diagnostic" })
 
--- copy absolute file path
-vim.keymap.set("n", "<leader>cp", function()
-  local filepath = vim.fn.expand("%:p")
-  vim.fn.setreg("+", filepath)
-  print("Copied: " .. filepath)
-end, { desc = "Copy absolute file path" })
+local pick = require("utils.pick")
+
+vim.keymap.set("n", "<leader>cp", function() pick.copy(pick.rel_path()) end,
+  { desc = "Copy file path (git-relative)" })
+vim.keymap.set("n", "<leader>cd", function() pick.copy(pick.rel_path(true)) end,
+  { desc = "Copy dir path (git-relative)" })
+vim.keymap.set("n", "<leader>cP", function() pick.copy(vim.fn.expand("%:p")) end,
+  { desc = "Copy absolute file path" })
 
