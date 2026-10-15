@@ -33,6 +33,7 @@ return {
       { "<leader>l", group = "lsp" },
       { "<leader>L", group = "leetcode" },
       { "<leader>b", group = "buffer" },
+      { "<leader>c", group = "copy/diagnostic" },
       { "<C-w>",     group = "window/split" },  -- hint for Ctrl-w
     },
   },

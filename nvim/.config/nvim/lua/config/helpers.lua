@@ -1,4 +1,5 @@
-vim.keymap.set("n", "<leader>cpe", function()
+-- <leader>cE (was <leader>cpe, which made <leader>cp wait for a 3rd key)
+vim.keymap.set("n", "<leader>cE", function()
     local diagnostics = vim.diagnostic.get(0, { lnum = vim.fn.line(".") - 1 })
     if #diagnostics > 0 then
         local message = diagnostics[1].message
@@ -7,7 +8,7 @@ vim.keymap.set("n", "<leader>cpe", function()
     else
         print("No diagnostic at cursor")
     end
-end, { noremap = true, silent = true })
+end, { silent = true, desc = "Copy diagnostic message" })
 
 -- diagnostics
 vim.keymap.set("n", "<leader>ne", function() vim.diagnostic.jump({ count = 1, float = true }) end, { desc = "Next diagnostic" })

@@ -64,11 +64,11 @@ return {
       end,
       desc = "Search & replace (current file's dir)",
     },
-    -- Pick one or more directories with fzf first (<Tab> to multi-select)
+    -- Browse to a directory first (<Tab> in, <S-Tab> up, <C-f> fuzzy multi-select)
     {
       "<leader>sD",
       function()
-        require("utils.pick").pick_dir("Dirs for replace> ", function(dirs)
+        require("utils.pick").browse_dir("Replace in> ", function(dirs)
           local paths = vim.tbl_map(escape_path, dirs)
           require("grug-far").open({ prefills = { paths = table.concat(paths, " ") } })
         end)

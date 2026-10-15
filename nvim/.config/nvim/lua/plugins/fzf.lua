@@ -27,7 +27,7 @@ return {
     })
 
     local pick = require("utils.pick")
-    local pick_dir, buf_dir = pick.pick_dir, pick.buf_dir
+    local buf_dir = pick.buf_dir
 
     local function map(mode, keys, fn, desc)
       vim.keymap.set(mode, keys, fn, { desc = desc })
@@ -38,11 +38,14 @@ return {
     map("n", "<leader>fF", function()
       fzf.files({ cwd = buf_dir() })
     end, "Find files (current file's dir)")
+    -- Browse folders with <Tab>/<S-Tab>, <Enter> = search files there,
+    -- <C-f> = fuzzy search all folders (multi-select). See utils/pick.lua.
     map("n", "<leader>fd", function()
-      pick_dir("Dirs for files> ", function(dirs)
-        fzf.files({ search_paths = dirs, prompt = "Files (" .. pick.label(dirs) .. ")> " })
-      end)
-    end, "Find files (pick directories)")
+      pick.browse_dir("Files in> ", pick.files_in)
+    end, "Find files (browse to a directory)")
+    map("n", "<leader>fe", function()
+      pick.pick_dir("Reveal in tree> ", function(dirs) pick.reveal_in_tree(dirs[1]) end)
+    end, "Find directory -> show in Neo-tree")
     map("n", "<leader>pf", fzf.git_files, "Find git files")
     map("n", "<leader>fo", fzf.oldfiles, "Recent files")
     map("n", "<leader>fb", fzf.buffers, "Buffers")
@@ -53,10 +56,8 @@ return {
       fzf.live_grep({ cwd = buf_dir() })
     end, "Live grep (current file's dir)")
     map("n", "<leader>fD", function()
-      pick_dir("Dirs for grep> ", function(dirs)
-        fzf.live_grep({ search_paths = dirs, prompt = "Grep (" .. pick.label(dirs) .. ")> " })
-      end)
-    end, "Live grep (pick directories)")
+      pick.browse_dir("Grep in> ", pick.grep_in)
+    end, "Live grep (browse to a directory)")
     map("n", "<leader>fs", fzf.grep, "Grep for a string (prompt)")
     map("n", "<leader>fw", fzf.grep_cword, "Grep word under cursor")
     map("v", "<leader>fw", fzf.grep_visual, "Grep selection")
